@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Java Maven modules which create Docker images
 JAVA_IMAGE_MODULES="server meta s2i"
 
@@ -95,6 +97,9 @@ release::run() {
     # Set pom.xml version to the given release_version
     update_pom_versions "$topdir" "$release_version" "$maven_opts"
 
+    # Create the operator image
+    "$topdir/install/operator/build.sh" --operator-build docker --image-build docker --image-name "syndesis/syndesis-operator:$release_version"
+
     # Make a clean install
     mvn_clean_install "$topdir" "$maven_opts"
 
@@ -110,9 +115,6 @@ release::run() {
 
     # Create the image for the upgrade
     create_upgrade_docker_image "$topdir" "$release_version"
-
-    # Create the operator image
-    "$topdir/install/operator/build.sh" --operator-build docker --image-build docker --image-name "syndesis/syndesis-operator:$release_version"
 
     # For a test run, we are done
     if [ $(hasflag --dry-run -n) ]; then
